@@ -71,10 +71,10 @@ ensure_chain_jump() {
   local child="$5"
 
   "$IPT" -w -t "$table" -C "$parent" \
-    -p tcp -d "$public_ip" --dport "$public_port" \
+    -p tcp -m tcp -d "$public_ip" --dport "$public_port" \
     -j "$child" 2>/dev/null || \
   "$IPT" -w -t "$table" -I "$parent" 1 \
-    -p tcp -d "$public_ip" --dport "$public_port" \
+    -p tcp -m tcp -d "$public_ip" --dport "$public_port" \
     -j "$child"
 }
 
@@ -319,6 +319,7 @@ cmd_set() {
 
   "$IPT" -w -t nat -F "$chain"
   "$IPT" -w -t nat -A "$chain" \
+    -p tcp -m tcp --dport "$public_port" \
     -m comment --comment "$comment" \
     -j DNAT --to-destination "$target_ip:$target_port"
 
@@ -326,7 +327,7 @@ cmd_set() {
   delete_rules_by_comment filter "$ALLOW_CHAIN" "$comment"
 
   "$IPT" -w -I "$ALLOW_CHAIN" 1 \
-    -p tcp -d "$target_ip" --dport "$target_port" \
+    -p tcp -m tcp -d "$target_ip" --dport "$target_port" \
     -m comment --comment "$comment" \
     -j ACCEPT
 
@@ -392,18 +393,18 @@ cmd_del() {
   comment="$(comment_text "$public_ip" "$public_port")"
 
   while "$IPT" -w -t nat -C PREROUTING \
-    -p tcp -d "$public_ip" --dport "$public_port" \
+    -p tcp -m tcp -d "$public_ip" --dport "$public_port" \
     -j "$chain" 2>/dev/null; do
     "$IPT" -w -t nat -D PREROUTING \
-      -p tcp -d "$public_ip" --dport "$public_port" \
+      -p tcp -m tcp -d "$public_ip" --dport "$public_port" \
       -j "$chain"
   done
 
   while "$IPT" -w -t nat -C OUTPUT \
-    -p tcp -d "$public_ip" --dport "$public_port" \
+    -p tcp -m tcp -d "$public_ip" --dport "$public_port" \
     -j "$chain" 2>/dev/null; do
     "$IPT" -w -t nat -D OUTPUT \
-      -p tcp -d "$public_ip" --dport "$public_port" \
+      -p tcp -m tcp -d "$public_ip" --dport "$public_port" \
       -j "$chain"
   done
 
